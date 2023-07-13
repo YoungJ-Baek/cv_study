@@ -2,6 +2,7 @@ import cv2
 import config as cf
 import numpy as np
 from stereo_utils import *
+from skimage.transform import warp, ProjectiveTransform
 
 
 # Load camera parameter
@@ -174,19 +175,83 @@ def main():
     )
 
     matched_left, matched_right = obtainCorrespondingPoints(
-        image_left.astype(np.uint8), image_right.astype(np.uint8), 8, show=False
+        image_left.astype(np.uint8), image_right.astype(np.uint8), 50, show=False
     )
     matched_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
     matched_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
 
     # show_matching_result(image_left, image_right, matched_left, matched_right)
     F = compute_fundamental_matrix_normalized(matched_left, matched_right)
-    p1 = matched_left.T[:, 0]
-    p2 = matched_right.T[:, 0]
-
-    plot_epipolar_lines(
-        image_left, image_right, matched_left, matched_right, show_epipole=False
+    # plot_epipolar_lines(
+    #     image_left, image_right, matched_left, matched_right, show_epipole=False
+    # )
+    e1 = compute_epipole(F)
+    e2 = compute_epipole(F.T)
+    # print(np.round(e2.T @ F @ e1))
+    # plot_epipolar_lines(
+    #     image_left, image_right, matched_left, matched_right, show_epipole=True
+    # )
+    H1, H2 = compute_matching_homographies(
+        e2, F, image_right, matched_left, matched_right
     )
+    # Transform points based on the homography matrix
+    new_points1 = H1 @ matched_left.T
+    new_points2 = H2 @ matched_right.T
+    new_points1 /= new_points1[2, :]
+    new_points2 /= new_points2[2, :]
+    new_points1 = new_points1.T
+    new_points2 = new_points2.T
+    im1_warped = warp(image_left, ProjectiveTransform(matrix=np.linalg.inv(H1)))
+    im2_warped = warp(image_right, ProjectiveTransform(matrix=np.linalg.inv(H2)))
+    # warp images based on the homography matrix
+    # im1_warped = cv2.warpPerspective(
+    #     image_left,
+    #     np.linalg.inv(H1),
+    #     (image_left.shape[1], image_left.shape[0]),
+    #     # flags=cv2.INTER_LINEAR,
+    #     # borderMode=cv2.BORDER_CONSTANT,
+    #     # borderValue=0,
+    # )
+    # im2_warped = cv2.warpPerspective(
+    #     image_right,
+    #     np.linalg.inv(H2),
+    #     (image_right.shape[1], image_right.shape[0]),
+    #     # flags=cv2.INTER_LINEAR,
+    #     # borderMode=cv2.BORDER_CONSTANT,
+    #     # borderValue=0,
+    # )
+    image = np.hstack((im1_warped, im2_warped))
+    cv2.imshow("test", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    h, w = image_left.shape
+
+    nrows = 2
+    ncols = 1
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6, 8))
+
+    # plot image 1
+    ax1 = axes[0]
+    ax1.set_title("Image 1 warped")
+    ax1.imshow(im1_warped, cmap="gray")
+
+    # plot image 2
+    ax2 = axes[1]
+    ax2.set_title("Image 2 warped")
+    ax2.imshow(im2_warped, cmap="gray")
+
+    # plot the epipolar lines and points
+    n = new_points1.shape[0]
+    for i in range(n):
+        p1 = new_points1[i]
+        p2 = new_points2[i]
+
+        ax1.hlines(p2[1], 0, w, color="orange")
+        ax1.scatter(*p1[:2], color="blue")
+
+        ax2.hlines(p1[1], 0, w, color="orange")
+        ax2.scatter(*p2[:2], color="blue")
+    plt.show()
 
     # R, t = calculateRotationTranslation(
     #     matched_left, matched_right, K_left, K_right, D_left, D_right
