@@ -43,7 +43,7 @@ def equalizeStereoHist(image1, image2, method=0, show=False):
 
 
 # Feature matching stereo images via ORB to obtain R and t
-def obtainCorrespondingPoints(image_left, image_right, num_points=20):
+def obtainCorrespondingPoints(image_left, image_right, num_points=20, show=False):
     orb = cv2.ORB_create()
     matched_left, matched_right = [], []
 
@@ -51,19 +51,42 @@ def obtainCorrespondingPoints(image_left, image_right, num_points=20):
     kp_right, des_right = orb.detectAndCompute(image_right, None)
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = sorted(bf.match(des_left, des_right), key=lambda x: x.distance)[:num_points]
+    matches = sorted(bf.match(des_left, des_right), key=lambda x: x.distance)[
+        : num_points + 1
+    ]
 
-    points_left = np.float32([kp_left[m.queryIdx].pt for m in matches])  # .reshape(-1, 1, 2)
-    points_right = np.float32([kp_right[m.queryIdx].pt for m in matches])  # .reshape(-1, 1, 2)
+    points_left = np.float32(
+        [kp_left[m.queryIdx].pt for m in matches]
+    )  # .reshape(-1, 1, 2)
+    points_right = np.float32(
+        [kp_right[m.queryIdx].pt for m in matches]
+    )  # .reshape(-1, 1, 2)
 
     matched_left = np.array(points_left)
     matched_right = np.array(points_right)
+
+    matched_image = cv2.drawMatches(
+        image_left,
+        kp_left,
+        image_right,
+        kp_right,
+        matches,
+        None,
+        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+    )
+
+    # Display the matched image
+    cv2.imshow("Matched Features", matched_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     return matched_left, matched_right
 
 
 # Undistort whole images
-def undistortStereoImages(image_left, image_right, K_left, K_right, D_left, D_right, show=False):
+def undistortStereoImages(
+    image_left, image_right, K_left, K_right, D_left, D_right, show=False
+):
     undistort_left = cv2.undistort(image_left, K_left, D_left)
     undistort_right = cv2.undistort(image_right, K_right, D_right)
 
@@ -76,7 +99,9 @@ def undistortStereoImages(image_left, image_right, K_left, K_right, D_left, D_ri
 
 
 # Calculate R (rotation matrix) and t (translation vector) via F and E using matched points
-def calculateRotationTranslation(matched_left, matched_right, K_left, K_right, D_left, D_right):
+def calculateRotationTranslation(
+    matched_left, matched_right, K_left, K_right, D_left, D_right
+):
     matched_left = matched_left.reshape(-1, 2)
     matched_right = matched_right.reshape(-1, 2)
 
@@ -98,11 +123,19 @@ def calculateRotationTranslation(matched_left, matched_right, K_left, K_right, D
 def main():
     K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
     image_left, image_right = loadStereoImages(show=False)
-    image_left, image_right = equalizeStereoHist(image_left, image_right, method=1, show=False)
-    image_left, image_right = undistortStereoImages(image_left, image_right, K_left, K_right, D_left, D_right, show=False)
+    image_left, image_right = equalizeStereoHist(
+        image_left, image_right, method=1, show=False
+    )
+    image_left, image_right = undistortStereoImages(
+        image_left, image_right, K_left, K_right, D_left, D_right, show=False
+    )
 
-    matched_left, matched_right = obtainCorrespondingPoints(image_left.astype(np.uint8), image_right.astype(np.uint8), 8)
-    R, t = calculateRotationTranslation(matched_left, matched_right, K_left, K_right, D_left, D_right)
+    matched_left, matched_right = obtainCorrespondingPoints(
+        image_left.astype(np.uint8), image_right.astype(np.uint8), 8, show=True
+    )
+    R, t = calculateRotationTranslation(
+        matched_left, matched_right, K_left, K_right, D_left, D_right
+    )
     print(R, t)
 
 
