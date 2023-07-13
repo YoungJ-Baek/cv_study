@@ -65,20 +65,21 @@ def obtainCorrespondingPoints(image_left, image_right, num_points=20, show=False
     matched_left = np.array(points_left)
     matched_right = np.array(points_right)
 
-    matched_image = cv2.drawMatches(
-        image_left,
-        kp_left,
-        image_right,
-        kp_right,
-        matches,
-        None,
-        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
-    )
+    if show == True:
+        matched_image = cv2.drawMatches(
+            image_left,
+            kp_left,
+            image_right,
+            kp_right,
+            matches,
+            None,
+            flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+        )
 
-    # Display the matched image
-    cv2.imshow("Matched Features", matched_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # Display the matched image
+        cv2.imshow("Matched Features", matched_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     return matched_left, matched_right
 
