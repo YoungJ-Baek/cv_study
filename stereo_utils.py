@@ -2,58 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-### ESSENTIAL MATRIX ###
-
-
-# def get_cross_product_matrix(vector):
-#     """
-#     The cross product of two vectors can be represented as a matrix multiplication.
-#     a x b = [a']b,
-#     where
-#     a = [a1, a2, a3] and
-#     a' = [[0, -a3, a2],
-#           [a3, 0, -a1],
-#           [-a2, a1, 0]]
-#     """
-#     A = np.zeros((3, 3))
-#     a1, a2, a3 = vector
-#     A[0][1] = -a3
-#     A[0][2] = a2
-#     A[1][0] = a3
-#     A[1][2] = -a1
-#     A[2][0] = -a2
-#     A[2][1] = a1
-
-#     return A
-
-
-# def to_hg_coords(points):
-#     """
-#     Convert the points from euclidean coordinates to homogeneous coordinates
-#     """
-#     points = np.concatenate((points, np.ones((1, points.shape[1]))), axis=0)
-#     return points
-
-
-# def to_eucld_coords(points_hg):
-#     """
-#     Convert the points from homogeneous coordinates to euclidean coordinates
-#     """
-#     z = points_hg[-1, :]
-#     points = points_hg[:2, :] / z
-#     return points
-
-
-# def is_vectors_close(v1, v2):
-#     """
-#     check if two vectors are close to each other
-#     """
-#     v1 = v1.reshape(-1)
-#     v2 = v2.reshape(-1)
-#     assert len(v1) == len(v2)
-#     assert np.isclose(v1, v2).sum() == len(v1)
-
-
 def plot_line(coeffs, xlim):
     """
     Given the coefficients a, b, c of the ax + by + c = 0,
