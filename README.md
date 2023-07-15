@@ -4,6 +4,10 @@ Repository for studying computer vision, especially OpenCV, PCL.
 
 ## To do
 
+- [ ] Convert code from calibrating whole image to calibrating only key points
+  - [ ] Feature matching first, and undistort key points
+  - [ ] Calculate R, t and rectify(perspective transform) undistorted key points
+  - [ ] Plot obtained key points on the rectified images
 - [ ] Convert code from Python to C++
 - [ ] Refactoring code available for ROS2
 
