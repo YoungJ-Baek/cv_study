@@ -5,53 +5,53 @@ import matplotlib.pyplot as plt
 ### ESSENTIAL MATRIX ###
 
 
-def get_cross_product_matrix(vector):
-    """
-    The cross product of two vectors can be represented as a matrix multiplication.
-    a x b = [a']b,
-    where
-    a = [a1, a2, a3] and
-    a' = [[0, -a3, a2],
-          [a3, 0, -a1],
-          [-a2, a1, 0]]
-    """
-    A = np.zeros((3, 3))
-    a1, a2, a3 = vector
-    A[0][1] = -a3
-    A[0][2] = a2
-    A[1][0] = a3
-    A[1][2] = -a1
-    A[2][0] = -a2
-    A[2][1] = a1
+# def get_cross_product_matrix(vector):
+#     """
+#     The cross product of two vectors can be represented as a matrix multiplication.
+#     a x b = [a']b,
+#     where
+#     a = [a1, a2, a3] and
+#     a' = [[0, -a3, a2],
+#           [a3, 0, -a1],
+#           [-a2, a1, 0]]
+#     """
+#     A = np.zeros((3, 3))
+#     a1, a2, a3 = vector
+#     A[0][1] = -a3
+#     A[0][2] = a2
+#     A[1][0] = a3
+#     A[1][2] = -a1
+#     A[2][0] = -a2
+#     A[2][1] = a1
 
-    return A
-
-
-def to_hg_coords(points):
-    """
-    Convert the points from euclidean coordinates to homogeneous coordinates
-    """
-    points = np.concatenate((points, np.ones((1, points.shape[1]))), axis=0)
-    return points
+#     return A
 
 
-def to_eucld_coords(points_hg):
-    """
-    Convert the points from homogeneous coordinates to euclidean coordinates
-    """
-    z = points_hg[-1, :]
-    points = points_hg[:2, :] / z
-    return points
+# def to_hg_coords(points):
+#     """
+#     Convert the points from euclidean coordinates to homogeneous coordinates
+#     """
+#     points = np.concatenate((points, np.ones((1, points.shape[1]))), axis=0)
+#     return points
 
 
-def is_vectors_close(v1, v2):
-    """
-    check if two vectors are close to each other
-    """
-    v1 = v1.reshape(-1)
-    v2 = v2.reshape(-1)
-    assert len(v1) == len(v2)
-    assert np.isclose(v1, v2).sum() == len(v1)
+# def to_eucld_coords(points_hg):
+#     """
+#     Convert the points from homogeneous coordinates to euclidean coordinates
+#     """
+#     z = points_hg[-1, :]
+#     points = points_hg[:2, :] / z
+#     return points
+
+
+# def is_vectors_close(v1, v2):
+#     """
+#     check if two vectors are close to each other
+#     """
+#     v1 = v1.reshape(-1)
+#     v2 = v2.reshape(-1)
+#     assert len(v1) == len(v2)
+#     assert np.isclose(v1, v2).sum() == len(v1)
 
 
 def plot_line(coeffs, xlim):
@@ -82,6 +82,7 @@ def show_matching_result(img1, img2, img1_pts, img2_pts):
         )
         plt.plot([p1[0], p2[0] + img1.shape[1]], [p1[1], p2[1]])
         print([p1[0], p2[0]], [p1[1], p2[1]])
+    plt.title("feature matching")
     plt.show()
 
 
@@ -237,6 +238,7 @@ def plot_epipolar_lines(img1, img2, points1, points2, show_epipole=False):
         ax2.set_ylim(h, 0)
 
     plt.tight_layout()
+    plt.title("plot epipolar lines")
     plt.show()
 
 
