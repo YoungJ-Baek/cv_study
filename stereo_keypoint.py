@@ -1,129 +1,204 @@
 import cv2
+import config as cf
 import numpy as np
+from stereo_utils import *
+from skimage.transform import warp, ProjectiveTransform
 
-# Intrinsic parameters and distortion coefficients
-# Left camera
-left_intrinsic = np.array(
-    [
-        [457.587, 0, 379.999],
-        [0, 456.134, 255.238],
-        [0, 0, 1],
-    ]
-)
 
-left_distortion = np.array([-0.28368365, 0.07451284, -0.00010473, -3.55590700e-05])
+# Load camera parameter
+def loadCameraParameter():
+    return cf.K_left, cf.K_right, cf.D_left, cf.D_right, cf.P_left, cf.P_right
 
-# Right camera
-right_intrinsic = np.array(
-    [
-        [458.654, 0, 369.215],
-        [0, 457.296, 248.375],
-        [0, 0, 1],
-    ]
-)
-
-right_distortion = np.array([-0.28340811, 0.07395907, 0.00019359, 1.76187114e-05])
 
 # Load left and right images
-left_gray = cv2.imread("left.png", cv2.COLOR_BGR2GRAY)
-right_gray = cv2.imread("right.png", cv2.COLOR_BGR2GRAY)
+def loadStereoImages(show=False):
+    left_gray = cv2.imread("left.png", cv2.COLOR_BGR2GRAY)
+    right_gray = cv2.imread("right.png", cv2.COLOR_BGR2GRAY)
 
-# Extract and match keypoints using ORB
-orb = cv2.ORB_create()
-keypoints_right, descriptors_right = orb.detectAndCompute(left_gray, None)
-keypoints_left, descriptors_left = orb.detectAndCompute(right_gray, None)
+    if show == True:
+        dst = np.hstack((left_gray, right_gray))
+        cv2.imshow("stereo images", dst)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-matches = matcher.match(descriptors_right, descriptors_left)
+    return left_gray, right_gray
 
-# num_keypoints = 20
-# selected_matches = sorted(matches, key=lambda x: x.distance)[:num_keypoints]
 
-# Undistort feature points
-right_undistorted_points = cv2.undistortPoints(
-    np.float32([keypoint.pt for keypoint in keypoints_right]).reshape(-1, 1, 2),
-    right_intrinsic,
-    right_distortion,
-    None,
-    right_intrinsic,
-)
+# Equalize histogram of stereo images, 0 is conventional, and 1 is CLAHE
+def equalizeStereoHist(image1, image2, method=0, show=False):
+    if method == 0:
+        image_left = cv2.equalizeHist(image1)
+        image_right = cv2.equalizeHist(image2)
+    elif method == 1:
+        clahe_left = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe_right = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        image_left = clahe_left.apply(image1)
+        image_right = clahe_right.apply(image2)
 
-left_undistorted_points = cv2.undistortPoints(
-    np.float32([keypoint.pt for keypoint in keypoints_left]).reshape(-1, 1, 2),
-    left_intrinsic,
-    left_distortion,
-    None,
-    left_intrinsic,
-)
+    if show == True:
+        compare_result = np.hstack((image1, image_left))
+        cv2.imshow("left image", compare_result)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-# Estimate fundamental matrix and essential matrix using undistorted keypoints
-F, mask = cv2.findFundamentalMat(
-    right_undistorted_points, left_undistorted_points, cv2.FM_RANSAC, 0.1, 0.99
-)
-E = np.dot(right_intrinsic.T, np.dot(F, left_intrinsic))
+    return image_left, image_right
 
-# Step 5: Obtain R and t from the essential matrix
-_, R, t, _ = cv2.recoverPose(
-    E, right_undistorted_points, left_undistorted_points, right_intrinsic
-)
 
-# Perform rectification
-R1, R2, P1, P2, _, _, _ = cv2.stereoRectify(
-    right_intrinsic,
-    right_distortion,
-    left_intrinsic,
-    left_distortion,
-    right_gray.shape[::-1],
-    R,
-    t,
-)
+# Feature matching stereo images via ORB to obtain R and t
+def obtainCorrespondingPoints(image_left, image_right, num_points=20, show=False):
+    orb = cv2.ORB_create()
+    matched_left, matched_right = [], []
 
-# Convert undistorted keypoints to homogeneous coordinates
-right_undistorted_points_homogeneous = (
-    cv2.convertPointsToHomogeneous(right_undistorted_points).squeeze(1).T
-)
-left_undistorted_points_homogeneous = (
-    cv2.convertPointsToHomogeneous(left_undistorted_points).squeeze(1).T
-)
+    kp_left, des_left = orb.detectAndCompute(image_left, None)
+    kp_right, des_right = orb.detectAndCompute(image_right, None)
 
-# Rectify undistorted keypoints
-rectified_right_points_homogeneous = np.dot(
-    R1, right_undistorted_points_homogeneous
-) + P1[:, -1].reshape(3, 1)
-rectified_left_points_homogeneous = np.dot(
-    R2, left_undistorted_points_homogeneous
-) + P2[:, -1].reshape(3, 1)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = sorted(bf.match(des_left, des_right), key=lambda x: x.distance)[
+        :num_points
+    ]
 
-# Convert rectified keypoints back to 2D coordinates
-rectified_right_points = cv2.convertPointsFromHomogeneous(
-    rectified_right_points_homogeneous.T.reshape(-1, 1, 3)
-)
-rectified_left_points = cv2.convertPointsFromHomogeneous(
-    rectified_left_points_homogeneous.T.reshape(-1, 1, 3)
-)
-print(rectified_left_points, rectified_right_points)
-# Visualize undistorted and rectified keypoints
-right_image_keypoints = cv2.drawKeypoints(
-    right_gray, keypoints_right, None, color=(0, 0, 255), flags=0
-)
-left_image_keypoints = cv2.drawKeypoints(
-    left_gray, keypoints_left, None, color=(0, 0, 255), flags=0
-)
+    points_left = np.float32(
+        [kp_left[m.queryIdx].pt for m in matches]
+    )  # .reshape(-1, 1, 2)
+    points_right = np.float32(
+        [kp_right[m.trainIdx].pt for m in matches]
+    )  # .reshape(-1, 1, 2)
 
-rectified_image = np.concatenate((right_gray, left_gray), axis=1)
-rectified_image = cv2.cvtColor(rectified_image, cv2.COLOR_GRAY2BGR)
-for point in rectified_right_points:
-    x, y = point[0]
-    cv2.circle(rectified_image, (int(x), int(y)), 5, (0, 0, 255), -1)
+    matched_left = np.array(points_left)
+    matched_right = np.array(points_right)
 
-for point in rectified_left_points:
-    x, y = point[0]
-    x += right_gray.shape[1]  # Shift x-coordinate for left keypoints
-    cv2.circle(rectified_image, (int(x), int(y)), 5, (0, 0, 255), -1)
+    if show == True:
+        matched_image = cv2.drawMatches(
+            image_left,
+            kp_left,
+            image_right,
+            kp_right,
+            matches,
+            None,
+            flags=cv2.DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS,
+        )
 
-# Display the images
-cv2.imshow("Right Keypoints", right_image_keypoints)
-cv2.imshow("Left Keypoints", left_image_keypoints)
-cv2.imshow("Rectified Keypoints", rectified_image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+        # Display the matched image
+        cv2.imshow("Matched Features", matched_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    return matched_left, matched_right
+
+
+# Undistort whole images
+def undistortStereoImages(
+    image_left, image_right, K_left, K_right, D_left, D_right, show=False
+):
+    undistort_left = cv2.undistort(image_left, K_left, D_left)
+    undistort_right = cv2.undistort(image_right, K_right, D_right)
+
+    if show == True:
+        dst = np.hstack((image_left, undistort_left))
+        cv2.imshow("undistortion", dst)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    return undistort_left, undistort_right
+
+
+def main():
+    K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
+    image_left, image_right = loadStereoImages(show=False)
+
+    image_left, image_right = equalizeStereoHist(
+        image_left, image_right, method=1, show=False
+    )
+
+    matched_left, matched_right = obtainCorrespondingPoints(
+        image_left.astype(np.uint8), image_right.astype(np.uint8), 50, show=False
+    )
+
+    show_matching_result(image_left, image_right, matched_left, matched_right)
+    # matched_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
+    # matched_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
+    undistorted_left = cv2.undistortImagePoints(matched_left, K_left, D_left)
+    undistorted_right = cv2.undistortImagePoints(matched_right, K_right, D_right)
+
+    matched_left = cv2.convertPointsToHomogeneous(undistorted_left).reshape(-1, 3)
+    matched_right = cv2.convertPointsToHomogeneous(undistorted_right).reshape(-1, 3)
+
+    show_matching_result(image_left, image_right, matched_left, matched_right)
+
+    F = compute_fundamental_matrix_normalized(matched_left, matched_right)
+    plot_epipolar_lines(
+        image_left, image_right, matched_left, matched_right, show_epipole=False
+    )
+    e1 = compute_epipole(F)
+    e2 = compute_epipole(F.T)
+    # print(np.round(e2.T @ F @ e1))
+    plot_epipolar_lines(
+        image_left, image_right, matched_left, matched_right, show_epipole=False
+    )
+    H1, H2 = compute_matching_homographies(
+        e2, F, image_right, matched_left, matched_right
+    )
+    # Transform points based on the homography matrix
+    new_points1 = H1 @ matched_left.T
+    new_points2 = H2 @ matched_right.T
+    new_points1 /= new_points1[2, :]
+    new_points2 /= new_points2[2, :]
+    new_points1 = new_points1.T
+    new_points2 = new_points2.T
+    # im1_warped = warp(image_left, ProjectiveTransform(matrix=np.linalg.inv(H1)))
+    # im2_warped = warp(image_right, ProjectiveTransform(matrix=np.linalg.inv(H2)))
+    # warp images based on the homography matrix
+    # rectified_left = cv2.perspectiveTransform(matched_left, np.linalg.inv(H1))
+    im1_warped = cv2.warpPerspective(
+        image_left,
+        np.linalg.inv(H1),
+        (image_left.shape[1], image_left.shape[0]),
+        # flags=cv2.INTER_LINEAR,
+        # borderMode=cv2.BORDER_CONSTANT,
+        # borderValue=0,
+    )
+    # rectified_right = cv2.perspectiveTransform(matched_right, np.linalg.inv(H2))
+    im2_warped = cv2.warpPerspective(
+        image_right,
+        np.linalg.inv(H2),
+        (image_right.shape[1], image_right.shape[0]),
+        # flags=cv2.INTER_LINEAR,
+        # borderMode=cv2.BORDER_CONSTANT,
+        # borderValue=0,
+    )
+    image = np.hstack((im1_warped, im2_warped))
+    cv2.imshow("rectified_result", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    h, w = image_left.shape
+
+    nrows = 1
+    ncols = 2
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6, 8))
+
+    # plot image 1
+    ax1 = axes[0]
+    ax1.set_title("Image 1 warped")
+    ax1.imshow(im1_warped, cmap="gray")
+
+    # plot image 2
+    ax2 = axes[1]
+    ax2.set_title("Image 2 warped")
+    ax2.imshow(im2_warped, cmap="gray")
+
+    # plot the epipolar lines and points
+    n = new_points1.shape[0]
+    for i in range(n):
+        p1 = new_points1[i]
+        p2 = new_points2[i]
+
+        ax1.hlines(p2[1], 0, w, color="orange")
+        ax1.scatter(*p1[:2], color="blue")
+
+        ax2.hlines(p1[1], 0, w, color="orange")
+        ax2.scatter(*p2[:2], color="blue")
+    plt.title("epipolar line alignment")
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

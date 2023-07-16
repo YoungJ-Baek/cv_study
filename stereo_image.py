@@ -182,15 +182,10 @@ def main():
 
     show_matching_result(image_left, image_right, matched_left, matched_right)
     F = compute_fundamental_matrix_normalized(matched_left, matched_right)
-    plot_epipolar_lines(
-        image_left, image_right, matched_left, matched_right, show_epipole=False
-    )
+
     e1 = compute_epipole(F)
     e2 = compute_epipole(F.T)
-    # print(np.round(e2.T @ F @ e1))
-    plot_epipolar_lines(
-        image_left, image_right, matched_left, matched_right, show_epipole=True
-    )
+
     H1, H2 = compute_matching_homographies(
         e2, F, image_right, matched_left, matched_right
     )
@@ -220,10 +215,7 @@ def main():
         # borderMode=cv2.BORDER_CONSTANT,
         # borderValue=0,
     )
-    image = np.hstack((im1_warped, im2_warped))
-    cv2.imshow("rectified_result", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
     h, w = image_left.shape
 
     nrows = 1
