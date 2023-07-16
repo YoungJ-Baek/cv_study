@@ -29,7 +29,7 @@ def show_matching_result(img1, img2, img1_pts, img2_pts):
             p2[0] + img1.shape[1], p2[1], s=35, edgecolors="r", facecolors="none"
         )
         plt.plot([p1[0], p2[0] + img1.shape[1]], [p1[1], p2[1]])
-        print([p1[0], p2[0]], [p1[1], p2[1]])
+        # print([p1[0], p2[0]], [p1[1], p2[1]])
     plt.title("feature matching")
     plt.show()
 
