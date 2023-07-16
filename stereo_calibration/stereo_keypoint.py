@@ -2,7 +2,7 @@ import cv2
 import config as cf
 import numpy as np
 from stereo_utils import *
-from skimage.transform import warp, ProjectiveTransform
+import time
 
 
 # Load camera parameter
@@ -12,8 +12,8 @@ def loadCameraParameter():
 
 # Load left and right images
 def loadStereoImages(show=False):
-    left_gray = cv2.imread("left.png", cv2.COLOR_BGR2GRAY)
-    right_gray = cv2.imread("right.png", cv2.COLOR_BGR2GRAY)
+    left_gray = cv2.imread("original_images/left.png", cv2.COLOR_BGR2GRAY)
+    right_gray = cv2.imread("original_images/right.png", cv2.COLOR_BGR2GRAY)
 
     if show == True:
         dst = np.hstack((left_gray, right_gray))
@@ -57,12 +57,8 @@ def obtainCorrespondingPoints(image_left, image_right, num_points=20, show=False
         :num_points
     ]
 
-    points_left = np.float32(
-        [kp_left[m.queryIdx].pt for m in matches]
-    )  # .reshape(-1, 1, 2)
-    points_right = np.float32(
-        [kp_right[m.trainIdx].pt for m in matches]
-    )  # .reshape(-1, 1, 2)
+    points_left = np.float32([kp_left[m.queryIdx].pt for m in matches])
+    points_right = np.float32([kp_right[m.trainIdx].pt for m in matches])
 
     matched_left = np.array(points_left)
     matched_right = np.array(points_right)
@@ -102,6 +98,7 @@ def undistortStereoImages(
 
 
 def main():
+    start = time.time()
     K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
     image_left, image_right = loadStereoImages(show=False)
 
@@ -113,16 +110,11 @@ def main():
         image_left.astype(np.uint8), image_right.astype(np.uint8), 50, show=False
     )
 
-    # show_matching_result(image_left, image_right, matched_left, matched_right)
-    # matched_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
-    # matched_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
     undistorted_left = cv2.undistortImagePoints(matched_left, K_left, D_left)
     undistorted_right = cv2.undistortImagePoints(matched_right, K_right, D_right)
 
     matched_left = cv2.convertPointsToHomogeneous(undistorted_left).reshape(-1, 3)
     matched_right = cv2.convertPointsToHomogeneous(undistorted_right).reshape(-1, 3)
-
-    # show_matching_result(image_left, image_right, matched_left, matched_right)
 
     F = compute_fundamental_matrix_normalized(matched_left, matched_right)
 
@@ -140,7 +132,8 @@ def main():
     new_points2 /= new_points2[2, :]
     new_points1 = new_points1.T
     new_points2 = new_points2.T
-
+    end = time.time()
+    print(f"{end-start:.5f} sec")
     matched_left = matched_left.reshape(-1, 1, 2)
     matched_right = matched_right.reshape(-1, 1, 2)
 
@@ -156,10 +149,6 @@ def main():
         (image_right.shape[1], image_right.shape[0]),
     )
 
-    # image = np.hstack((im1_warped, im2_warped))
-    # cv2.imshow("rectified_result", image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
     h, w = image_left.shape
 
     nrows = 1
