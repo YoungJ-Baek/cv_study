@@ -101,86 +101,29 @@ def undistortStereoImages(
     return undistort_left, undistort_right
 
 
-# Calculate R (rotation matrix) and t (translation vector) via F and E using matched points
-def calculateRotationTranslation(
-    matched_left, matched_right, K_left, K_right, D_left, D_right
-):
-    matched_left = matched_left.reshape(-1, 2)
-    matched_right = matched_right.reshape(-1, 2)
-
-    # H: homogeneous
-    H_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
-    H_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
-    F, _ = cv2.findFundamentalMat(H_left, H_right, cv2.FM_8POINT)
-    E = np.matmul(np.matmul(K_right.T, F), K_left)
-    _, R, t, _ = cv2.recoverPose(
-        E=E,
-        points1=matched_left,
-        points2=matched_right,
-        cameraMatrix=K_left,
-    )
-
-    return R, t
-
-
-# Rectify stereo images
-def rectifyStereoImages(
-    image_left, image_right, K_left, D_left, K_right, D_right, R, T, show=False
-):
-    # Get the image size
-    img_size = (image_left.shape[1], image_left.shape[0])
-
-    # Compute the rectification transforms
-    R1, R2, P1, P2, _, _, _ = cv2.stereoRectify(
-        K_left,
-        D_left,
-        K_right,
-        D_right,
-        img_size,
-        R,
-        T,
-        alpha=0,
-    )
-
-    map_left_x, map_left_y = cv2.initUndistortRectifyMap(
-        K_left, D_left, R1, P1, img_size, cv2.CV_32FC1
-    )
-    map_right_x, map_right_y = cv2.initUndistortRectifyMap(
-        K_right, D_right, R2, P2, img_size, cv2.CV_32FC1
-    )
-
-    # Remap the images using the rectification maps
-    img_left_rectified = cv2.remap(image_left, map_left_x, map_left_y, cv2.INTER_LINEAR)
-    img_right_rectified = cv2.remap(
-        image_right, map_right_x, map_right_y, cv2.INTER_LINEAR
-    )
-
-    if show == True:
-        dst = np.hstack((img_left_rectified, img_right_rectified))
-        cv2.imshow("rectification", dst)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-    return img_left_rectified, img_right_rectified
-
-
 def main():
     K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
     image_left, image_right = loadStereoImages(show=False)
+
     image_left, image_right = equalizeStereoHist(
         image_left, image_right, method=1, show=False
-    )
-    image_left, image_right = undistortStereoImages(
-        image_left, image_right, K_left, K_right, D_left, D_right, show=False
     )
 
     matched_left, matched_right = obtainCorrespondingPoints(
         image_left.astype(np.uint8), image_right.astype(np.uint8), 50, show=False
     )
-    matched_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
-    matched_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
 
-    show_matching_result(image_left, image_right, matched_left, matched_right)
+    # show_matching_result(image_left, image_right, matched_left, matched_right)
+    # matched_left = cv2.convertPointsToHomogeneous(matched_left).reshape(-1, 3)
+    # matched_right = cv2.convertPointsToHomogeneous(matched_right).reshape(-1, 3)
+    undistorted_left = cv2.undistortImagePoints(matched_left, K_left, D_left)
+    undistorted_right = cv2.undistortImagePoints(matched_right, K_right, D_right)
+
+    matched_left = cv2.convertPointsToHomogeneous(undistorted_left).reshape(-1, 3)
+    matched_right = cv2.convertPointsToHomogeneous(undistorted_right).reshape(-1, 3)
+
+    # show_matching_result(image_left, image_right, matched_left, matched_right)
+
     F = compute_fundamental_matrix_normalized(matched_left, matched_right)
 
     e1 = compute_epipole(F)
@@ -189,6 +132,7 @@ def main():
     H1, H2 = compute_matching_homographies(
         e2, F, image_right, matched_left, matched_right
     )
+
     # Transform points based on the homography matrix
     new_points1 = H1 @ matched_left.T
     new_points2 = H2 @ matched_right.T
@@ -196,26 +140,26 @@ def main():
     new_points2 /= new_points2[2, :]
     new_points1 = new_points1.T
     new_points2 = new_points2.T
-    # im1_warped = warp(image_left, ProjectiveTransform(matrix=np.linalg.inv(H1)))
-    # im2_warped = warp(image_right, ProjectiveTransform(matrix=np.linalg.inv(H2)))
+
+    matched_left = matched_left.reshape(-1, 1, 2)
+    matched_right = matched_right.reshape(-1, 1, 2)
+
     # warp images based on the homography matrix
     im1_warped = cv2.warpPerspective(
         image_left,
         np.linalg.inv(H1),
         (image_left.shape[1], image_left.shape[0]),
-        # flags=cv2.INTER_LINEAR,
-        # borderMode=cv2.BORDER_CONSTANT,
-        # borderValue=0,
     )
     im2_warped = cv2.warpPerspective(
         image_right,
         np.linalg.inv(H2),
         (image_right.shape[1], image_right.shape[0]),
-        # flags=cv2.INTER_LINEAR,
-        # borderMode=cv2.BORDER_CONSTANT,
-        # borderValue=0,
     )
 
+    # image = np.hstack((im1_warped, im2_warped))
+    # cv2.imshow("rectified_result", image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     h, w = image_left.shape
 
     nrows = 1
@@ -237,13 +181,15 @@ def main():
     for i in range(n):
         p1 = new_points1[i]
         p2 = new_points2[i]
-
+        if (p1[0] < 0 or p1[0] >= 480) or (p1[1] < 0 or p1[1] >= 752):
+            continue
+        if (p2[0] < 0 or p2[0] >= 480) or (p2[1] < 0 or p2[1] >= 752):
+            continue
         ax1.hlines(p2[1], 0, w, color="orange")
         ax1.scatter(*p1[:2], color="blue")
 
         ax2.hlines(p1[1], 0, w, color="orange")
         ax2.scatter(*p2[:2], color="blue")
-    plt.title("epipolar line alignment")
     plt.show()
 
 
