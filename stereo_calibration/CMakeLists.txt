@@ -16,5 +16,5 @@ include_directories(
 set( THIRD_PARTY_LIBS
     ${OpenCV_LIBS})
 
-add_executable(stereo_calibration stereo_calib.cpp)
-target_link_libraries(stereo_calibration ${THIRD_PARTY_LIBS})
+add_executable(stereo_image stereo_image.cpp)
+target_link_libraries(stereo_image ${THIRD_PARTY_LIBS})
