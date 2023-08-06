@@ -2,5 +2,15 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    // 기본 포매터를 정의합니다.
+"editor.defaultFormatter": "ms-vscode.cpptools",
+
+// 저장할 때 코드를 포매팅합니다.
+"editor.formatOnSave": true,
+
+// 코드 포매팅 스타일을 정의합니다.
+"C_Cpp.clang_format_style": "{ IndentWidth: 4, ColumnLimit: 100 }",
+
+"C_Cpp.clang_format_fallbackStyle": "Google",
 }
