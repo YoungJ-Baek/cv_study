@@ -18,3 +18,6 @@ set( THIRD_PARTY_LIBS
 
 add_executable(stereo_image stereo_image.cpp)
 target_link_libraries(stereo_image ${THIRD_PARTY_LIBS})
+
+add_executable(stereo_keypoint stereo_keypoint.cpp)
+target_link_libraries(stereo_keypoint ${THIRD_PARTY_LIBS})
