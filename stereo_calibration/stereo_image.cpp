@@ -56,12 +56,8 @@ Eigen::MatrixXd divideByZ(const Eigen::MatrixXd &points);
 cv::Mat eigenToMat(const Eigen::MatrixXd &eigenMatrix);
 
 int main() {
-    cv::Mat img1 = cv::imread(
-        "/Users/youngjin/Desktop/Dev_python/cv_study/stereo_calibration/original_images/left.png",
-        cv::IMREAD_GRAYSCALE);
-    cv::Mat img2 = cv::imread(
-        "/Users/youngjin/Desktop/Dev_python/cv_study/stereo_calibration/original_images/right.png",
-        cv::IMREAD_GRAYSCALE);
+    cv::Mat img1 = cv::imread("../original_images/left.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat img2 = cv::imread("../original_images/right.png", cv::IMREAD_GRAYSCALE);
 
     equalizeStereoHist(img1, img2, 1, false);
     cv::Mat undistort_left, undistort_right;

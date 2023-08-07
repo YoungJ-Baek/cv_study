@@ -12,8 +12,14 @@ def loadCameraParameter():
 
 # Load left and right images
 def loadStereoImages(show=False):
-    left_gray = cv2.imread("original_images/left.png", cv2.COLOR_BGR2GRAY)
-    right_gray = cv2.imread("original_images/right.png", cv2.COLOR_BGR2GRAY)
+    left_gray = cv2.imread(
+        "./original_images/left.png",
+        cv2.COLOR_BGR2GRAY,
+    )
+    right_gray = cv2.imread(
+        "./original_images/right.png",
+        cv2.COLOR_BGR2GRAY,
+    )
 
     if show == True:
         dst = np.hstack((left_gray, right_gray))
@@ -100,7 +106,7 @@ def undistortStereoImages(
 def main():
     start = time.time()
     K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
-    image_left, image_right = loadStereoImages(show=False)
+    image_left, image_right = loadStereoImages(show=True)
     image_left, image_right = equalizeStereoHist(
         image_left, image_right, method=1, show=False
     )
@@ -118,7 +124,6 @@ def main():
 
     e1 = compute_epipole(F)
     e2 = compute_epipole(F.T)
-
     H1, H2 = compute_matching_homographies(
         e2, F, image_right, matched_left, matched_right
     )
