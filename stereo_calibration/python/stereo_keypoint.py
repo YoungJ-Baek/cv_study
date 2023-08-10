@@ -12,8 +12,8 @@ def loadCameraParameter():
 
 # Load left and right images
 def loadStereoImages(show=False):
-    left_gray = cv2.imread("./original_images/left.png", cv2.COLOR_BGR2GRAY)
-    right_gray = cv2.imread("./original_images/right.png", cv2.COLOR_BGR2GRAY)
+    left_gray = cv2.imread("../original_images/left.png", cv2.COLOR_BGR2GRAY)
+    right_gray = cv2.imread("../original_images/right.png", cv2.COLOR_BGR2GRAY)
 
     if show == True:
         dst = np.hstack((left_gray, right_gray))
