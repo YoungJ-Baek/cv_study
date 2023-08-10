@@ -3,7 +3,7 @@
 Repository to implement stereo camera calibration, including histogram equalization, undistortion, and rectification.
 
 
-## Process
+## Python
 1. Load camera parameters from `config.py`
 2. Load stereo images from `original_images/` folder
 3. Equalize histogram of stereo images
@@ -12,6 +12,17 @@ Repository to implement stereo camera calibration, including histogram equalizat
   - `stereo_image.py`: undistort entire image
   - `stereo_keypoint.py`: undistort only key points
 6. Rectification
+
+
+## C++
+1. Use hard-coded camera parameters in each `stereo_image.cpp` and `stereo_keypoint.cpp`
+2. Load stereo images from `original_images/` folder
+3. Equalize histogram of stereo images (`stereo_calibration` library)
+4. Detect and match key points via ORB (`stereo_calibration` library)
+5. Undistortion (`stereo_calibration` library)
+  - `stereo_image.cpp`: undistort entire image
+  - `stereo_keypoint.cpp`: undistort only key points
+6. Rectification (`stereo_calibration` library)
 
 
 ## Result
@@ -30,9 +41,10 @@ You can see the result images in `result_images` folder.
   - [X] Feature matching first, and undistort key points
   - [X] Calculate R, t and rectify(perspective transform) undistorted key points
   - [X] Plot obtained key points on the rectified images
-- [X] Convert code from Python to C++
+- [ ] Convert code from Python to C++
   - [X] Stereo calibration for whole image
   - [X] Stereo calibration for key points
+  - [ ] Calculate time cost via C++
 - [ ] Refactoring code available for ROS2
 
 ## Reference
