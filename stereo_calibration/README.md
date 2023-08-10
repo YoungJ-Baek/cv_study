@@ -30,9 +30,9 @@ You can see the result images in `result_images` folder.
   - [X] Feature matching first, and undistort key points
   - [X] Calculate R, t and rectify(perspective transform) undistorted key points
   - [X] Plot obtained key points on the rectified images
-- [ ] Convert code from Python to C++
+- [X] Convert code from Python to C++
   - [X] Stereo calibration for whole image
-  - [ ] Stereo calibration for key points
+  - [X] Stereo calibration for key points
 - [ ] Refactoring code available for ROS2
 
 ## Reference
