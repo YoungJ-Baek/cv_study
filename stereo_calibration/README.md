@@ -33,6 +33,10 @@ You can see the result images in `result_images` folder.
 ### Time cost
 - `stereo_image.py`: 0.03804 sec
 - `stereo_keypoint.py`: 0.03253 sec
+- `stereo_keypoint.cpp`: 0.05348 sec
+- `stereo_image.cpp`: 0.074614 sec
+
+Needs to optimize C++ code according to the result.
 
 
 ## To do
@@ -41,10 +45,10 @@ You can see the result images in `result_images` folder.
   - [X] Feature matching first, and undistort key points
   - [X] Calculate R, t and rectify(perspective transform) undistorted key points
   - [X] Plot obtained key points on the rectified images
-- [ ] Convert code from Python to C++
+- [X] Convert code from Python to C++
   - [X] Stereo calibration for whole image
   - [X] Stereo calibration for key points
-  - [ ] Calculate time cost via C++
+  - [X] Calculate time cost via C++
 - [ ] Refactoring code available for ROS2
 
 ## Reference
