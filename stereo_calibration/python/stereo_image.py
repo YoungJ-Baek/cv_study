@@ -1,7 +1,7 @@
 import cv2
-import config as cf
+from src import config as cf
 import numpy as np
-from stereo_utils import *
+from src import *
 import time
 
 
