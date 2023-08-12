@@ -24,8 +24,8 @@ int main() {
     cv::Mat D_right =
         (cv::Mat_<double>(5, 1) << -0.28340811, 0.07395907, 0.00019359, 1.76187114e-05);
 
-    cv::Mat img1 = cv::imread("../original_images/left.png", cv::IMREAD_GRAYSCALE);
-    cv::Mat img2 = cv::imread("../original_images/right.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat img1 = cv::imread("../../original_images/left.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat img2 = cv::imread("../../original_images/right.png", cv::IMREAD_GRAYSCALE);
 
     equalizeStereoHist(img1, img2, 1, false);
     cv::Mat undistort_left, undistort_right;
