@@ -50,7 +50,8 @@ Needs to experiment in same environment
   - [X] Stereo calibration for whole image
   - [X] Stereo calibration for key points
   - [X] Calculate time cost via C++
-- [ ] Refactoring code available for ROS2
+- [X] Refactoring code available for ROS2
+  - Refactor and merge to [HRRG repository](https://github.com/hrrg/slam-tutorial)
 
 ## Reference
 
