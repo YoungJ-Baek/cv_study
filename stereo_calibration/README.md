@@ -31,10 +31,12 @@ You can see the result images in `result_images` folder.
 
 
 ### Time cost
-- `stereo_image.py`: 0.03804 sec
-- `stereo_keypoint.py`: 0.03253 sec
-- `stereo_keypoint.cpp`: ~~0.05348 sec~~
-- `stereo_image.cpp`: ~~0.074614 sec~~
+
+Environment: M1 Macbook Pro 14'
+- `stereo_image.py`: 0.911449 sec
+- `stereo_keypoint.py`: 0.09214 sec
+- `stereo_keypoint.cpp`: 0.051377 sec
+- `stereo_image.cpp`: 0.085161
 
 ~~Needs to optimize C++ code according to the result.~~
 Needs to experiment in same environment
