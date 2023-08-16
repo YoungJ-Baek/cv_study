@@ -106,7 +106,7 @@ def undistortStereoImages(
 def main():
     start = time.time()
     K_left, K_right, D_left, D_right, P_left, P_right = loadCameraParameter()
-    image_left, image_right = loadStereoImages(show=True)
+    image_left, image_right = loadStereoImages(show=False)
     image_left, image_right = equalizeStereoHist(
         image_left, image_right, method=1, show=False
     )
